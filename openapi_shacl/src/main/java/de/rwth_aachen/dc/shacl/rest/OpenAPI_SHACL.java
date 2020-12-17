@@ -33,10 +33,11 @@ import org.topbraid.shacl.validation.ValidationUtil;
 @Path("/")
 public class OpenAPI_SHACL {
 
+	
 	/**
 	 * @param accept_type
-	 * @param ifcFile
-	 * @param shaclFile
+	 * @param rdfFile RDF file of the model in the TTL format
+	 * @param shaclFile SHACL rules in the TTL format
 	 * @return
 	 */
 	@POST
@@ -44,13 +45,15 @@ public class OpenAPI_SHACL {
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
 	@Produces({ "text/turtle", "application/ld+json", "application/rdf+xml" })
 	public Response check(@HeaderParam(HttpHeaders.ACCEPT) String accept_type,
-			@FormDataParam("RDF_TTLFile") InputStream rdfFile,@FormDataParam("SHACL_TTLFile") InputStream shaclFile) {
+			@FormDataParam("rdfFile") InputStream rdfFile,@FormDataParam("shaclFile") InputStream shaclFile) {
 		try {
 			File tempRdfFile = File.createTempFile("rdf-", ".ttl");
 			tempRdfFile.deleteOnExit();
 
 			File tempSHACLFile = File.createTempFile("shacl-", ".ttl");
 			tempSHACLFile.deleteOnExit();
+			System.out.println("rdfFile:"+rdfFile);
+			System.out.println("tempRdfFile:"+tempRdfFile);
 
 			Files.copy(rdfFile, tempRdfFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 			rdfFile.close();
@@ -61,6 +64,7 @@ public class OpenAPI_SHACL {
 
 		} catch (Exception e) {
 			e.printStackTrace();
+			
 		}
 
 		return Response.noContent().build();
