@@ -1,4 +1,4 @@
- package de.rwth_aachen.dc.shacl.rest;
+package de.rwth_aachen.dc.shacl.rest;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,8 +16,15 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.Resource;
+import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.riot.RDFFormat;
+import org.apache.jena.util.FileUtils;
 import org.glassfish.jersey.media.multipart.FormDataParam;
+import org.topbraid.jenax.util.JenaUtil;
+import org.topbraid.shacl.util.ModelPrinter;
+import org.topbraid.shacl.validation.ValidationUtil;
 
 /*
  * Jyrki Oraskari, 2020
@@ -26,20 +33,31 @@ import org.glassfish.jersey.media.multipart.FormDataParam;
 @Path("/")
 public class OpenAPI_SHACL {
 
-
+	/**
+	 * @param accept_type
+	 * @param ifcFile
+	 * @param shaclFile
+	 * @return
+	 */
 	@POST
 	@Path("/check")
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
 	@Produces({ "text/turtle", "application/ld+json", "application/rdf+xml" })
 	public Response check(@HeaderParam(HttpHeaders.ACCEPT) String accept_type,
-			@FormDataParam("ifcFile") InputStream ifcFile) {
+			@FormDataParam("ifcFile") InputStream ifcFile,@FormDataParam("shaclFile") InputStream shaclFile) {
 		try {
 			File tempIfcFile = File.createTempFile("ifc2lbd-", ".ifc");
 			tempIfcFile.deleteOnExit();
 
+			File tempSHACLFile = File.createTempFile("ifc2lbd-", ".ifc");
+			tempIfcFile.deleteOnExit();
+
 			Files.copy(ifcFile, tempIfcFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 			ifcFile.close();
-			return handle_rdf(accept_type, tempIfcFile);
+			Files.copy(shaclFile, tempSHACLFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+			shaclFile.close();
+
+			return handle_rdf(accept_type, tempIfcFile,tempSHACLFile);
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -47,31 +65,35 @@ public class OpenAPI_SHACL {
 
 		return Response.noContent().build();
 	}
-	
 
-	private Response handle_rdf(String accept_type, File tempIfcFile) {
+	private Response handle_rdf(String accept_type, File tempIfcFile,File tempSHACLFile) {
 		if (accept_type.equals("application/ld+json")) {
 			StringBuilder result_string = new StringBuilder();
-			execute_check(tempIfcFile, result_string, RDFFormat.JSONLD_COMPACT_PRETTY);
+			execute_check(tempIfcFile, tempSHACLFile, result_string, RDFFormat.JSONLD_COMPACT_PRETTY);
 			System.out.println(result_string.toString());
 			return Response.ok(result_string.toString(), "application/ld+json").build();
 		} else if (accept_type.equals("application/rdf+xml")) {
 			StringBuilder result_string = new StringBuilder();
-			execute_check(tempIfcFile, result_string, RDFFormat.RDFXML);
+			execute_check(tempIfcFile, tempSHACLFile, result_string, RDFFormat.RDFXML);
 			System.out.println(result_string.toString());
 			return Response.ok(result_string.toString(), "application/rdf+xml").build();
 		} else {
 			StringBuilder result_string = new StringBuilder();
-			execute_check(tempIfcFile, result_string, RDFFormat.TURTLE_PRETTY);
+			execute_check(tempIfcFile, tempSHACLFile, result_string, RDFFormat.TURTLE_PRETTY);
 			System.out.println(result_string.toString());
 			return Response.ok(result_string.toString(), "text/turtle").build();
 
 		}
 	}
 
+	private void execute_check(File rdfFile,File shaclFile, StringBuilder result_string, RDFFormat rdfformat) {
 
-	
-	private void execute_check(File rdfFile, StringBuilder result_string, RDFFormat rdfformat) {
+		Model dataModel = JenaUtil.createMemoryModel();
+		Model sahapesModel = JenaUtil.createMemoryModel();
+		RDFDataMgr.read(dataModel, rdfFile.getAbsolutePath()); 
+		RDFDataMgr.read(sahapesModel, shaclFile.getAbsolutePath()); 
+
+		Resource report = ValidationUtil.validateModel(dataModel, sahapesModel, true);
 
 		OutputStream ttl_output = new OutputStream() {
 			private StringBuilder string = new StringBuilder();
@@ -85,9 +107,8 @@ public class OpenAPI_SHACL {
 				return this.string.toString();
 			}
 		};
-		//RDFDataMgr.write(ttl_output, m, rdfformat);
+		RDFDataMgr.write(ttl_output, report.getModel(), rdfformat);
 		result_string.append(ttl_output.toString());
 	}
-
 
 }
