@@ -61,6 +61,7 @@
 		<enunciate.version>2.8.0</enunciate.version>
 		<log4j.version>1.2.17</log4j.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<skipTests>true</skipTests>
 	</properties>
 	<dependencies>
 		<!-- JAX-RS -->

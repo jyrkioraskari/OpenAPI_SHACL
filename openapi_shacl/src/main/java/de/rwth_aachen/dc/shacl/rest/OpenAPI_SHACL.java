@@ -44,20 +44,20 @@ public class OpenAPI_SHACL {
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
 	@Produces({ "text/turtle", "application/ld+json", "application/rdf+xml" })
 	public Response check(@HeaderParam(HttpHeaders.ACCEPT) String accept_type,
-			@FormDataParam("ifcFile") InputStream ifcFile,@FormDataParam("shaclFile") InputStream shaclFile) {
+			@FormDataParam("RDF_TTLFile") InputStream rdfFile,@FormDataParam("SHACL_TTLFile") InputStream shaclFile) {
 		try {
-			File tempIfcFile = File.createTempFile("ifc2lbd-", ".ifc");
-			tempIfcFile.deleteOnExit();
+			File tempRdfFile = File.createTempFile("rdf-", ".ttl");
+			tempRdfFile.deleteOnExit();
 
-			File tempSHACLFile = File.createTempFile("ifc2lbd-", ".ifc");
-			tempIfcFile.deleteOnExit();
+			File tempSHACLFile = File.createTempFile("shacl-", ".ttl");
+			tempSHACLFile.deleteOnExit();
 
-			Files.copy(ifcFile, tempIfcFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-			ifcFile.close();
+			Files.copy(rdfFile, tempRdfFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+			rdfFile.close();
 			Files.copy(shaclFile, tempSHACLFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 			shaclFile.close();
 
-			return handle_rdf(accept_type, tempIfcFile,tempSHACLFile);
+			return handle_rdf(accept_type, tempRdfFile,tempSHACLFile);
 
 		} catch (Exception e) {
 			e.printStackTrace();
