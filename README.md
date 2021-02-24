@@ -1,5 +1,5 @@
 # OpenAPI_SHACL
-Version 0.1
+Version 1.0.0
 
 Contributors: Jyrki Oraskari
 

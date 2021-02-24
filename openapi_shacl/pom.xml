@@ -146,5 +146,5 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-	<description>An Restful OpenAPI implementation that checks an RDF formatted input against SHACL rule sets.</description>
+	<description>A Restful OpenAPI implementation that checks an RDF formatted input against SHACL rule sets.</description>
 </project>
